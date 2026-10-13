@@ -44,18 +44,34 @@ def group_duplicates(paths, threshold):
     return [[p for p, _ in g] for g in groups]
 
 
+OUTPUT_MARKER = ".photo_culler_output"
+
+
 def sort_into_folders(decisions, output_dir):
     """Rebuild kept/ and rejected/ inside output_dir and copy every photo into its folder."""
     kept_dir = output_dir / "kept"
     rejected_dir = output_dir / "rejected"
     low_rated_dir = rejected_dir / "low_rated"
     duplicates_dir = rejected_dir / "duplicates"
+    marker = output_dir / OUTPUT_MARKER
+
+    # safety: never delete folders that this tool did not create
+    for folder in (kept_dir, rejected_dir):
+        if folder.exists() and not marker.exists():
+            raise SystemExit(
+                f"Refusing to overwrite {folder}: it was not created by this tool. "
+                "Choose a different --output folder, or delete that folder yourself."
+            )
 
     for folder in (kept_dir, rejected_dir):
         if folder.exists():
-            shutil.rmtree(folder)  # only ever holds copies made by this tool
+            shutil.rmtree(folder)
     for folder in (kept_dir, low_rated_dir, duplicates_dir):
         folder.mkdir(parents=True)
+    marker.write_text(
+        "Created by photo_culler. kept/ and rejected/ are rebuilt on every run.\n",
+        encoding="utf-8",
+    )
 
     targets = {"kept": kept_dir, "low_rated": low_rated_dir, "duplicate": duplicates_dir}
     for photo, (status, _) in decisions.items():
@@ -74,8 +90,10 @@ def write_report(decisions, results, report_file):
 
 def main():
     # keep printing from crashing on terminals that cannot show every character
-    if hasattr(sys.stdout, "reconfigure"):
+    try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError, OSError):
+        pass
 
     parser = argparse.ArgumentParser(
         description="AI photo culler: sorts copies of your photos into kept / low-rated / duplicates. "

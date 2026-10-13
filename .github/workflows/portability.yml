@@ -7,13 +7,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python: ["3.10", "3.12"]
+        python: ["3.10", "3.12", "3.14"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt pytest
       - run: python -m src.main --help
-      - run: python -c "import src.main, src.evaluate, src.judge"
+      - run: python -m pytest -q
