@@ -38,7 +38,7 @@ def evaluate():
     results = json.loads(RESULTS_FILE.read_text(encoding="utf-8"))
 
     truth = {}
-    with open(LABELS_FILE, newline="", encoding="utf-8") as f:
+    with open(LABELS_FILE, newline="", encoding="utf-8-sig") as f:
         for row in csv.DictReader(f):
             value = row["keep"].strip().lower()
             if value in ("1", "yes", "y", "true"):

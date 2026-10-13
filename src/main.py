@@ -2,32 +2,27 @@ import argparse
 import csv
 import json
 import shutil
+import sys
 from pathlib import Path
 
 import imagehash
 from PIL import Image, ImageOps
 
-from src.judge import judge_photo
+from src.judge import HEIC_SUPPORTED, judge_photo
 
-INPUT_DIR = Path("test_photos")
-OUTPUT_DIR = Path("output")
-KEPT_DIR = OUTPUT_DIR / "kept"
-LOW_RATED_DIR = OUTPUT_DIR / "rejected" / "low_rated"
-DUPLICATES_DIR = OUTPUT_DIR / "rejected" / "duplicates"
-REPORT_FILE = OUTPUT_DIR / "report.csv"
-RESULTS_FILE = Path("results.json")
-EXTENSIONS = {".jpg", ".jpeg", ".png"}
-DUPLICATE_THRESHOLD = 6  # max hash distance to call two photos duplicates (0 = identical)
+EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+if HEIC_SUPPORTED:
+    EXTENSIONS |= {".heic", ".heif"}
 
 
-def load_results():
-    if RESULTS_FILE.exists():
-        return json.loads(RESULTS_FILE.read_text(encoding="utf-8"))
+def load_results(results_file):
+    if results_file.exists():
+        return json.loads(results_file.read_text(encoding="utf-8"))
     return {}
 
 
-def save_results(results):
-    RESULTS_FILE.write_text(json.dumps(results, indent=2), encoding="utf-8")
+def save_results(results_file, results):
+    results_file.write_text(json.dumps(results, indent=2), encoding="utf-8")
 
 
 def photo_hash(path):
@@ -35,13 +30,13 @@ def photo_hash(path):
     return imagehash.phash(img)
 
 
-def group_duplicates(paths):
+def group_duplicates(paths, threshold):
     """Group photos whose perceptual hashes are close. Returns a list of groups."""
     groups = []
     for path in paths:
         h = photo_hash(path)
         for group in groups:
-            if any(h - other <= DUPLICATE_THRESHOLD for _, other in group):
+            if any(h - other <= threshold for _, other in group):
                 group.append((path, h))
                 break
         else:
@@ -49,21 +44,27 @@ def group_duplicates(paths):
     return [[p for p, _ in g] for g in groups]
 
 
-def sort_into_folders(decisions):
-    """Rebuild output/ from scratch and copy every photo into its folder."""
-    for folder in (KEPT_DIR, OUTPUT_DIR / "rejected"):
+def sort_into_folders(decisions, output_dir):
+    """Rebuild kept/ and rejected/ inside output_dir and copy every photo into its folder."""
+    kept_dir = output_dir / "kept"
+    rejected_dir = output_dir / "rejected"
+    low_rated_dir = rejected_dir / "low_rated"
+    duplicates_dir = rejected_dir / "duplicates"
+
+    for folder in (kept_dir, rejected_dir):
         if folder.exists():
-            shutil.rmtree(folder)  # safe: output/ only ever holds copies
-    for folder in (KEPT_DIR, LOW_RATED_DIR, DUPLICATES_DIR):
+            shutil.rmtree(folder)  # only ever holds copies made by this tool
+    for folder in (kept_dir, low_rated_dir, duplicates_dir):
         folder.mkdir(parents=True)
 
-    targets = {"kept": KEPT_DIR, "low_rated": LOW_RATED_DIR, "duplicate": DUPLICATES_DIR}
+    targets = {"kept": kept_dir, "low_rated": low_rated_dir, "duplicate": duplicates_dir}
     for photo, (status, _) in decisions.items():
         shutil.copy2(photo, targets[status] / photo.name)
 
 
-def write_report(decisions, results):
-    with open(REPORT_FILE, "w", newline="", encoding="utf-8") as f:
+def write_report(decisions, results, report_file):
+    # utf-8-sig so Excel on Windows opens the file with correct characters
+    with open(report_file, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.writer(f)
         writer.writerow(["filename", "status", "score", "reason", "duplicate_of"])
         for photo, (status, duplicate_of) in sorted(decisions.items(), key=lambda kv: kv[0].name):
@@ -72,19 +73,48 @@ def write_report(decisions, results):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="AI photo culler")
+    # keep printing from crashing on terminals that cannot show every character
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+    parser = argparse.ArgumentParser(
+        description="AI photo culler: sorts copies of your photos into kept / low-rated / duplicates. "
+                    "Your original photos are never modified."
+    )
+    parser.add_argument("--input", default="test_photos",
+                        help="folder containing your photos (default: test_photos)")
+    parser.add_argument("--output", default="output",
+                        help="folder where sorted copies and report.csv are written (default: output)")
+    parser.add_argument("--results", default="results.json",
+                        help="cache file for AI judgments (default: results.json)")
+    parser.add_argument("--threshold", type=int, default=6,
+                        help="duplicate sensitivity: higher groups more photos together (default: 6)")
     parser.add_argument("--dry-run", action="store_true",
-                        help="judge and report on screen, but write no folders or files")
+                        help="print decisions but write no sorted folders or report "
+                             "(the judgment cache is still saved)")
     parser.add_argument("--rejudge", action="store_true",
                         help="ignore saved results and call the API again")
     args = parser.parse_args()
 
-    results = load_results()
+    input_dir = Path(args.input)
+    output_dir = Path(args.output)
+    results_file = Path(args.results)
+
+    if not input_dir.is_dir():
+        raise SystemExit(f"Input folder not found: {input_dir}")
+    if output_dir.resolve() == input_dir.resolve():
+        raise SystemExit("--output must be a different folder from --input.")
+
+    results = load_results(results_file)
     photos = sorted(
-        p for p in INPUT_DIR.iterdir()
+        p for p in input_dir.iterdir()
         if p.is_file() and p.suffix.lower() in EXTENSIONS
     )
-    print(f"Found {len(photos)} photos" + ("  [DRY RUN]" if args.dry_run else "") + "\n")
+    print(f"Found {len(photos)} photos in {input_dir}" + ("  [DRY RUN]" if args.dry_run else "") + "\n")
+    if not photos:
+        print("Supported types: " + ", ".join(sorted(EXTENSIONS)))
+        print("Only the top level of the folder is scanned (no subfolders).")
+        return
 
     # decisions maps each photo path to (status, duplicate_of)
     decisions = {}
@@ -105,7 +135,7 @@ def main():
                 failed += 1
                 continue
             results[photo.name] = result
-            save_results(results)  # save after every photo so a crash loses nothing
+            save_results(results_file, results)  # save after every photo so a crash loses nothing
             tag = ""
 
         if result["keep"]:
@@ -117,7 +147,7 @@ def main():
 
     # Step 2: among photos judged good, keep only the best of each duplicate group
     print("\nChecking for duplicates...")
-    for group in group_duplicates(survivors):
+    for group in group_duplicates(survivors, args.threshold):
         best = max(group, key=lambda p: (results[p.name]["score"], p.stat().st_size))
         decisions[best] = ("kept", None)
         if len(group) > 1:
@@ -129,15 +159,16 @@ def main():
 
     # Step 3: write the sorted folders and the report
     if not args.dry_run:
-        sort_into_folders(decisions)
-        write_report(decisions, results)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        sort_into_folders(decisions, output_dir)
+        write_report(decisions, results, output_dir / "report.csv")
 
     counts = {s: sum(1 for st, _ in decisions.values() if st == s)
               for s in ("kept", "low_rated", "duplicate")}
     print(f"\nDone. kept={counts['kept']} low_rated={counts['low_rated']} "
           f"duplicates={counts['duplicate']} errors={failed} cached={cached}")
     if not args.dry_run:
-        print(f"Sorted photos are in {OUTPUT_DIR}\\ and the report is {REPORT_FILE}")
+        print(f"Sorted photos are in {output_dir} and the report is {output_dir / 'report.csv'}")
 
 
 if __name__ == "__main__":
