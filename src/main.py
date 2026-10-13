@@ -15,10 +15,26 @@ if HEIC_SUPPORTED:
     EXTENSIONS |= {".heic", ".heif"}
 
 
-def load_results(results_file):
-    if results_file.exists():
-        return json.loads(results_file.read_text(encoding="utf-8"))
-    return {}
+import json
+from pathlib import Path
+
+def load_results(path):
+    path = Path(path)
+    if not path.exists():
+        return {}
+    
+    try:
+        content = path.read_text(encoding="utf-8")
+        # Treat completely empty files as malformed JSON so they trigger the recovery test
+        if not content.strip():
+            raise json.JSONDecodeError("Empty file", content, 0)
+        return json.loads(content)
+    except (json.JSONDecodeError, ValueError):
+        # Backup the corrupted/empty file as .bad
+        bad_path = Path(str(path) + ".bad")
+        if path.exists():
+            path.replace(bad_path)
+        return {}
 
 
 def save_results(results_file, results):
