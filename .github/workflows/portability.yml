@@ -15,5 +15,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install -r requirements.txt pytest
+      - name: Install local package
+        run: pip install -e .
       - run: python -m src.main --help
+        env:
+          PYTHONPATH: .
       - run: python -m pytest -q
+        env:
+          PYTHONPATH: .

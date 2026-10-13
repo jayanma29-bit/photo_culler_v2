@@ -1,8 +1,13 @@
 ﻿.venv/
-.env
-test_photos/
+venv/
 __pycache__/
-output/
-output/
+*.pyc
+.pytest_cache/
+.env
+.env.*
+!.env.example
+test_photos/
 source_photos/
+output/
 results.json
+results.json.*

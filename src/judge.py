@@ -84,6 +84,11 @@ def judge_photo(path, retries=3):
                 )
             if "api key" in text and ("invalid" in text or "not valid" in text):
                 raise SystemExit("Your GEMINI_API_KEY was rejected. Check the key in your .env file.")
-            time.sleep(2 ** attempt)
+            if "429" in text or "resource_exhausted" in text or "quota" in text:
+                wait = 15 * (attempt + 1)  # rate limited: back off 15s, 30s, 45s
+            else:
+                wait = 2 ** attempt
+            if attempt < retries - 1:
+                time.sleep(wait)
 
     raise last_error
