@@ -1,249 +1,322 @@
-# Photo Culler
+# Photo Culler v2
 
-![portability](https://github.com/jayanma29-bit/photo_culler_v2/actions/workflows/portability.yml/badge.svg)
-![Python](https://img.shields.io/badge/python-3.10%20%7C%203.12%20%7C%203.14-blue)
-![License: MIT](https://img.shields.io/badge/license-MIT-green)
+An AI photo culler. It scores your photos with the Gemini API, flags bad
+duplicates, and moves rejects into a `deleted_photos` folder so nothing is
+permanently deleted.
 
-Sort a messy folder of photos into the ones worth keeping, the ones that are not, and the extra copies, using AI and image hashing.
+Works on Windows, macOS, and Linux.
 
-## Contents
+## How to read this guide
 
-- [Description](#description)
-- [Setup](#setup)
-- [Usage](#usage)
-- [Understanding the output](#understanding-the-output)
-- [Safety and privacy](#safety-and-privacy)
-- [Troubleshooting](#troubleshooting)
-- [Project files](#project-files)
-- [Future updates](#future-updates)
-- [Results](#results)
-- [License](#license)
+Two kinds of boxes appear below, so you always know where to type things:
 
-## Description
+- **TERMINAL** means type it into a terminal window and press Enter.
+- **.ENV FILE** means type it inside the `.env` text file. Do NOT type
+  these lines into a terminal. They are settings, not commands.
 
-After a shoot, trip or event you often end up with hundreds of photos: some blurry, some badly exposed, and lots of near-identical burst shots. Photo Culler does the first pass of sorting for you.
+---
 
-**How it works**
+## Before you start (one-time checks)
 
-1. **AI judging.** A Gemini model looks at each photo and rates sharpness/focus, exposure, composition and subject clarity. It returns a keep/reject decision, a 1-10 score and a one-sentence reason.
-2. **Duplicate detection.** Among the photos the AI wanted to keep, a local perceptual hash finds near-identical shots. Only the highest-scoring photo in each group is kept.
-3. **Sorted copies and a report.** Your photos are copied into `kept`, `low_rated` and `duplicates` folders, and `report.csv` explains every decision.
+You need three things:
 
-**Your original photos are never modified.** The tool only reads your input folder and writes copies to a separate output folder.
+1. **Python 3.10 or newer.** Check by opening a terminal (see below) and
+   typing `python --version` (Windows) or `python3 --version`
+   (macOS/Linux). If you get an error or a version lower than 3.10,
+   install Python from https://www.python.org/downloads/
+2. **Git.** Check with `git --version`. If missing, install it from
+   https://git-scm.com/downloads
+3. **A free Gemini API key** from https://aistudio.google.com/apikey
+   (sign in, click "Create API key", copy it somewhere for Step 3).
 
-**Good to know:** judgments are cached in `results.json`, so rerunning on the same photos is free and instant, and an interrupted run continues where it stopped. One bad photo never stops a run; it is printed as an `ERROR` line and skipped.
+### How to open a terminal
 
-## Setup
+- **Windows:** press the Start button, type `PowerShell`, press Enter.
+- **macOS:** press Cmd + Space, type `Terminal`, press Enter.
+- **Linux:** press Ctrl + Alt + T.
 
-You need **Python 3.10 or newer** ([python.org/downloads](https://www.python.org/downloads/)) and a **Gemini API key** from [Google AI Studio](https://aistudio.google.com/apikey). Availability, limits and pricing depend on your country and change over time, so check Google's current terms.
+---
 
-### Step 1: Get the code
+## Step 1: Download (clone) the project
+
+**TERMINAL**
 
 ```
 git clone https://github.com/jayanma29-bit/photo_culler_v2.git
 cd photo_culler_v2
 ```
 
-No git? On the repository page click **Code > Download ZIP**, unzip it, and open a terminal inside the unzipped folder.
+The first line downloads the project into a new folder called
+`photo_culler_v2`. The second line moves your terminal into that folder.
 
-### Step 2: Create a virtual environment and install
+**Important:** for every step after this, your terminal must be inside the
+`photo_culler_v2` folder. If you close the terminal and open a new one,
+move back into the folder with `cd` and the path to where you cloned it,
+for example `cd C:\Users\YourName\photo_culler_v2` on Windows or
+`cd ~/photo_culler_v2` on macOS/Linux. Running things from any other
+folder will break the program's paths.
 
-**Windows (PowerShell)**
+After cloning, the folder looks like this:
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+```
+photo_culler_v2/
+├── .github/
+├── src/                 (the program: main.py, judge.py, ...)
+├── tests/
+├── sample_photos/       (example photos you can try first)
+├── test_photos/         (default input folder)
+├── .env.example         (template for your settings)
+├── .gitignore
+├── LICENSE
+├── README.md
+└── requirements.txt
 ```
 
-If `python` is not found, use `py`. If activation says "scripts are disabled", run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` and activate again.
+These do not come with the download. They get created on your computer
+as you follow the steps: `.venv/` (Step 2), `.env` (Step 3), and
+`output/` and `results.json` (first run).
 
-**macOS / Linux**
+---
 
-```bash
+## Step 2: Create a virtual environment and install packages
+
+A virtual environment is a private box for this project's Python packages,
+so they don't mix with anything else on your computer. You create it once.
+
+**TERMINAL (Windows PowerShell)**
+
+```
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+If you see a red error saying scripts are disabled, run this one line,
+then run the activate line again:
+
+```
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+**TERMINAL (macOS / Linux)**
+
+```
 python3 -m venv .venv
 source .venv/bin/activate
+```
+
+**What you should see:** your prompt now starts with `(.venv)`. That means
+the environment is active. Now install the packages (same terminal, all
+operating systems):
+
+**TERMINAL**
+
+```
 pip install -r requirements.txt
 ```
 
-Your prompt should now start with `(.venv)`. Activate the venv again every time you open a new terminal.
+Wait for it to finish. You will see a lot of text scrolling by. That is
+normal.
 
-### Step 3: Create your `.env` file (required)
+---
 
-The `.env` file holds your private API key. It is **not** in the repository on purpose, so you create it by copying the template `.env.example` (a hidden file, because its name starts with a dot).
+## Step 3: Add your API key and settings
 
-**Windows (PowerShell)**
+All of your settings live in one text file called `.env`. You make it by
+copying the template.
 
-```powershell
-Copy-Item .env.example .env
+### 3a. Create your `.env` file
+
+**TERMINAL (Windows)**
+
+```
+copy .env.example .env
+```
+
+**TERMINAL (macOS / Linux)**
+
+```
+cp .env.example .env
+```
+
+### 3b. Open `.env` and edit it
+
+Files that start with a dot are hidden on macOS and Linux, so open it from
+the terminal:
+
+**TERMINAL (Windows)**
+
+```
 notepad .env
 ```
 
-**macOS / Linux**
+**TERMINAL (macOS)**
 
-```bash
-cp .env.example .env
+```
+open -e .env
+```
+
+**TERMINAL (Linux)**
+
+```
 nano .env
 ```
+(In nano: edit, then press Ctrl + O, Enter to save, Ctrl + X to exit.)
 
-Replace `your_key_here` with your key. The file should contain exactly this one line (no quotes, no spaces around `=`):
+You can also open the project folder in VS Code and click the `.env` file.
 
-```
-GEMINI_API_KEY=AIza...your-real-key...
-```
+### 3c. Fill in the file
 
-Save and close. Optionally add `GEMINI_MODEL=<model name>` on its own line to use a different model.
+The file should contain these four lines. Replace only what is after the
+`=` sign. Do not add spaces around the `=`, and do not add quotes.
 
-### Step 4: Choose photos (required)
-
-Your photos are not in the repository either. Pick one:
-
-- **Try the included samples:** the repo has a `sample_photos/` folder. Nothing to do.
-- **Use your own photos:** put them in any folder and pass its path with `--input` (see [Usage](#usage)). Quote the path if it contains spaces.
-
-### Step 5: Check that everything is in place
+**.ENV FILE** (type this inside the file, NOT in the terminal)
 
 ```
-python -m src.main --help
-python -m src.main --input sample_photos --dry-run
+GEMINI_API_KEY=paste_your_key_here
+GEMINI_MODEL=gemini-3.8-flash
+INPUT_DIR=test_photos
+OUTPUT_DIR=output
 ```
 
-The first prints the options list. The second prints a decision for every sample photo and writes nothing. To confirm your files exist (the `-Force` and `-a` flags show hidden files):
+Save the file when you are done. Never share your `.env` file or post your
+key anywhere. It is already excluded from Git.
 
-```powershell
-Get-ChildItem -Force        # Windows
-```
+What each line does:
 
-```bash
-ls -a                       # macOS / Linux
-```
-
-You should see `.env`, `.env.example`, `requirements.txt`, `src`, `sample_photos` and `.venv`.
-
-### Files you create yourself
-
-| File or folder | Created by | Needed to run? |
-|---|---|---|
-| `.venv/` | You, in Step 2 | Yes |
-| `.env` | You, in Step 3 | Yes (holds your API key) |
-| A photo folder | You (or use `sample_photos/`) | Yes |
-| `results.json` | The tool (judgment cache) | No |
-| `output/` | The tool (sorted copies and `report.csv`) | No |
-| `labels.csv` | `python -m src.evaluate --template` | Only for accuracy testing |
-
-The last three are private or generated data, so git ignores them. They will not be in a fresh clone, and that is normal.
-
-## Usage
-
-Run from the project folder with the venv active. Start with a dry run, which prints every decision and writes nothing:
-
-```
-python -m src.main --input "path/to/photos" --dry-run
-python -m src.main --input "path/to/photos"
-```
-
-| Option | Meaning |
+| Setting | What it means |
 |---|---|
-| `--input PATH` | Folder with your photos (default `sample_photos`) |
-| `--output PATH` | Where sorted copies and the report go (default `output`) |
-| `--dry-run` | Print decisions, write no folders or report (new photos still use API calls) |
-| `--threshold N` | Duplicate sensitivity: lower is stricter, higher groups more (default 6) |
-| `--rejudge` | Ignore saved judgments and ask the AI again |
-| `--results PATH` | Judgment cache file (default `results.json`) |
+| `GEMINI_API_KEY` | Your own key from Google AI Studio. |
+| `GEMINI_MODEL` | Which Gemini model scores your photos. |
+| `INPUT_DIR` | The folder your photos are read from. |
+| `OUTPUT_DIR` | The folder results are written to. |
 
-Supported types: `.jpg`, `.jpeg`, `.png`, `.webp`, and iPhone `.heic`. Only the top level of the input folder is scanned.
+### Changing the model
 
-## Understanding the output
+Open `.env` (Step 3b), change the `GEMINI_MODEL` line to another model ID
+from Google AI Studio, save, and run the program again. You do not edit
+any code. The ID must be typed exactly, or you will get a "model not
+found" error.
+
+### Choosing where your photos come from (input)
+
+`INPUT_DIR` in your `.env` file is the folder the program reads photos
+from. It stays set until you change it.
+
+**Option A: use the default.** Leave the line as `INPUT_DIR=test_photos`.
+Then put your photos inside the `test_photos` folder in the project.
+Nothing else to do.
+
+**Option B: use a folder somewhere else on your computer.** Replace the
+value in the `.env` file with the full path of that folder:
+
+**.ENV FILE** (pick the line for your system, NOT in the terminal)
 
 ```
-output/
-  kept/                 the best photos
-  rejected/low_rated/   blurry, dark, badly composed
-  rejected/duplicates/  fine, but a better copy is in kept/
-  report.csv            filename, status, score, reason, duplicate_of
+INPUT_DIR=C:\Users\YourName\Pictures\Trip
+```
+```
+INPUT_DIR=/Users/yourname/Pictures/Trip
+```
+```
+INPUT_DIR=/home/yourname/Pictures/Trip
 ```
 
-The run ends with a summary line such as `Done. kept=12 low_rated=5 duplicates=3 errors=0 cached=20`. If `errors` is above 0, some photos failed; rerun the same command and only those are retried.
+The first is a Windows example, the second macOS, the third Linux. Use
+only one `INPUT_DIR` line in your file, with your real folder.
 
-To measure how well the AI agrees with you, run `python -m src.evaluate --template`, fill in the `keep` column of `labels.csv` (1 or 0), then run `python -m src.evaluate`.
+**How to get a folder's full path:**
 
-## Safety and privacy
+- **Windows:** open the folder in File Explorer, click the address bar at
+  the top, and copy the text. If you right-click the folder and choose
+  "Copy as path" instead, delete the quotation marks at the start and end
+  after pasting.
+- **macOS:** right-click the folder in Finder, hold the Option key, and
+  click "Copy ... as Pathname".
+- **Linux:** in a terminal, `cd` into the folder and type `pwd`. Copy what
+  it prints.
 
-- Inputs are only read, never changed. The `kept/` and `rejected/` folders inside the output folder are rebuilt every run, so use a dedicated output folder. The tool refuses to delete folders it did not create.
-- Photos are resized to 1024 px and **sent to Google's Gemini API** for judging. Only use photos you are comfortable sharing with a third party.
-- Your API key lives only in `.env`. Never paste it in code, chats or screenshots. If it leaks, delete it in Google AI Studio and make a new one.
-- `.gitignore` keeps private and generated data out of git: `.env`, `results.json`, `labels.csv`, `output/`, `test_photos/` and `source_photos/`. `results.json` and `labels.csv` contain your filenames, so do not publish them if those are private.
-- Photos you want to share belong in `sample_photos/`, which is not ignored.
+Your original photos are never changed or deleted.
 
-## Troubleshooting
+### Choosing where results go (output)
 
-| Problem | Fix |
-|---|---|
-| `ModuleNotFoundError` | The venv is not active. Activate it and run `pip install -r requirements.txt`. |
-| `No module named src` | You are not in the project folder. `cd` into the folder that contains `src/`. |
-| `GEMINI_API_KEY is not set` | Create `.env` (Step 3) and run from the project folder. On Windows, check the file is not really named `.env.txt`: run `Get-ChildItem -Force .env*`. |
-| `GEMINI_API_KEY was rejected` | Check `.env` for typos, quotes or extra spaces, and that the key is active in Google AI Studio. |
-| `Model '...' was not found` | Run `python -m src.list_models`, then set `GEMINI_MODEL=<model>` in `.env`. |
-| `Input folder not found` | The `--input` path does not exist. Folders like `test_photos/` are not in the repo; use `sample_photos` or your own path, in quotes if it has spaces. |
-| `Found 0 photos` | Check the path and file types. Subfolders are not scanned. |
-| `ERROR` lines with 429 or quota | You hit a rate limit. Wait and rerun; finished photos are cached. |
-| `ERROR ... cannot identify image file` | The file is corrupt or not a real image. It is skipped. |
-| `Refusing to overwrite ...` | Choose a different `--output` folder. |
-| `PermissionError` on `report.csv` | Close the file in Excel and rerun. |
-| Wrong duplicate grouping | Lower `--threshold` to group less, raise it to group more. |
-| `Failed building wheel for pillow-heif` | No HEIC package for your Python yet. Remove that line from `requirements.txt`; everything else still works. |
+`OUTPUT_DIR` in your `.env` file is where results are written.
 
-Still stuck? Open a GitHub issue with your OS, `python --version`, the command you ran, and the last 10 lines of output. Never include your API key.
+**Option A: use the default.** Leave it as `OUTPUT_DIR=output`. The
+program creates a folder called `output` inside the project the first time
+you run it. It does not exist before then, so don't worry if you can't
+find it yet.
 
-## Project files
+To open it after the first run:
 
-| File | What it does |
-|---|---|
-| `src/main.py` | The CLI: loops over photos, groups duplicates, sorts copies, writes the report |
-| `src/judge.py` | Gemini API call, prompt, retries, friendly API errors |
-| `src/evaluate.py` | Compares the AI's decisions to your own labels |
-| `src/list_models.py` | Lists the Gemini models your key can use |
-| `sample_photos/` | Example photos to try the tool right after cloning |
-| `tests/` | Automated tests (fake judge, no API key needed) |
-| `.github/workflows/portability.yml` | CI on Windows, macOS and Linux with Python 3.10, 3.12, 3.14 |
-| `requirements.txt` | The 8 direct dependencies |
-| `.env.example` | Template for your private `.env` |
-| `.gitignore` | Keeps secrets and private or generated data out of git |
-| `LICENSE` | MIT license |
+**TERMINAL (Windows)**
 
-Run the tests with `pip install pytest`, then `python -m pytest -q`.
+```
+explorer output
+```
 
-## Future updates
+**TERMINAL (macOS)**
 
-Planned ideas, nothing here is built yet.
+```
+open output
+```
 
-**Error codes and handling**
-- [ ] Distinct exit codes (bad config, bad folder, some photos failed, quota hit). Today a run with failed photos still exits with code 0.
-- [ ] A failed-photos summary at the end of a run, plus an optional `--log` file
-- [ ] Smarter retries that skip errors that can never succeed, and a `--check` command that verifies setup before a long run
+**TERMINAL (Linux)**
 
-**User interface**
-- [ ] A local web UI: pick a folder, watch progress, see a thumbnail gallery with scores and reasons
-- [ ] Manual override (move a photo between kept, low-rated and duplicates) and a side-by-side duplicate viewer
-- [ ] A packaged desktop app so no terminal is needed
+```
+xdg-open output
+```
 
-**Speed and cost**
-- [ ] Progress bar, parallel judging, and a cost estimate before any API calls
-- [ ] A cache keyed by file contents instead of filename
+**Option B: send results somewhere easier to find**, like your Desktop.
+Replace the value in the `.env` file with a full path (get it the same way
+as for the input folder):
 
-**Smarter culling**
-- [ ] Compare shots in a duplicate group directly, and detect closed eyes
-- [ ] Custom criteria such as "I care most about sharp eyes"
-- [ ] An offline option using a local vision model
+**.ENV FILE** (pick one, NOT in the terminal)
 
-**More formats and packaging**
-- [ ] RAW files, recursive subfolder scanning, and an HTML report with thumbnails
-- [ ] `pip install photo-culler` and a Docker image
+```
+OUTPUT_DIR=C:\Users\YourName\Desktop\culled
+```
+```
+OUTPUT_DIR=/Users/yourname/Desktop/culled
+```
+```
+OUTPUT_DIR=/home/yourname/Desktop/culled
+```
 
-## Results
+If the folder does not exist, the program creates it.
 
-(Add your measured accuracy, keep recall and keep precision from `python -m src.evaluate`, and how many photos you tested.)
+---
 
-## License
+## Step 4: Run it
 
-MIT. See `LICENSE`.
+Make sure your terminal is inside the `photo_culler_v2` folder and your
+prompt starts with `(.venv)`.
+
+**TERMINAL (Windows)**
+
+```
+python -m src.main
+```
+
+**TERMINAL (macOS / Linux)**
+
+```
+python3 -m src.main
+```
+
+When it finishes, open your output folder (Step 3, "Choosing where
+results go") to see the results. Low-rated photos and bad duplicates are
+moved into `deleted_photos`, so you can review them before deleting
+anything yourself.
+
+---
+
+## Coming back later
+
+Each time you open a new terminal to run the program again:
+
+1. `cd` into the `photo_culler_v2` folder.
+2. Activate the environment again (Step 2: the `Activate.ps1` line on
+   Windows, the `source` line on macOS/Linux).
+3. Run Step 4.
+
+You do not need to repeat the clone, the install, or the `.env` setup.
