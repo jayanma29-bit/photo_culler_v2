@@ -8,27 +8,13 @@ Sort a messy folder of photos into the ones worth keeping, the ones that are not
 
 ## What you need
 
-Have these ready before you start. Total time: about 10 minutes.
+- Windows, macOS or Linux, and an internet connection
+- **Python 3.10 or newer.** Check with `python --version` (`python3 --version` on macOS / Linux). Install from [python.org/downloads](https://www.python.org/downloads/) if needed. On Windows, tick **Add python.exe to PATH**.
+- **A free Gemini API key** from [aistudio.google.com/apikey](https://aistudio.google.com/apikey) (Google account required). Availability, limits and pricing vary by country, so check Google's current terms.
+- **A folder of photos** (`.jpg`, `.jpeg`, `.png`, `.webp`, `.heic`)
+- **Git** (optional; there is a ZIP download option)
 
-| You need | Details |
-|---|---|
-| A computer | Windows, macOS or Linux |
-| An internet connection | The AI judging runs through Google's Gemini API |
-| Python 3.10 or newer | Step 1 checks this and tells you how to install it if it is missing |
-| A Google account | Used in Step 5 to get a free Gemini API key |
-| Photos to sort | Keep them together in one folder. Supported: `.jpg`, `.jpeg`, `.png`, `.webp`, `.heic` |
-| Git (optional) | Step 2 also shows a way to download the project without it |
-
-API availability, limits and pricing depend on your country and change over time, so check Google's current terms.
-
-**You will write down four things as you go.** Keep a notes file open and fill these in:
-
-```
-Project folder path : ______________________  (Step 2)
-Photos folder path  : ______________________  (Step 3)
-Results folder path : ______________________  (Step 3)
-Gemini API key      : ______________________  (Step 5, keep it private)
-```
+Setup takes about 10 minutes. Commands go into a terminal: PowerShell on Windows, Terminal on macOS / Linux.
 
 ## Contents
 
@@ -60,127 +46,24 @@ After a shoot, trip or event you often end up with hundreds of photos: some blur
 
 ## Setup
 
-Do the steps in order. Steps 0 to 5 are a one-time setup. After that you only repeat Step 8.
+### 1. Download the project
 
-### How to read this guide
-
-- **Type only the box for your system.** Boxes are labeled Windows or macOS / Linux. Never paste both together, because the other system's commands will fail.
-- **Type one command at a time.** Press Enter and wait for your prompt to come back before the next one.
-- **Placeholders must be replaced.** Anything like `YourName`, `PHOTOS_PATH` or `path\to\...` is an example. Replace it with your real value.
-- **After each command** you will see **You should see** (what a working result looks like) and **If not** (what to do).
-
-### Finding a folder's path
-
-You will copy folder paths in Steps 2, 3 and 8. A path is a folder's full address, for example `C:\Users\YourName\Desktop\MyPhotos`.
-
-- **Windows:** in File Explorer, right-click the folder and choose **Copy as path**. On Windows 11, if you do not see it, hold Shift while you right-click. Windows adds the quotation marks for you.
-- **macOS:** in Finder, right-click the folder, hold the Option key, and choose **Copy "FolderName" as Pathname**. Add the quotation marks yourself when you use it.
-- **Linux:** in a terminal, `cd` into the folder and type `pwd`. Copy what it prints.
-
-**Shortcut on Windows and macOS:** type `cd ` (with a space after it), drag the folder from your file window into the terminal, and press Enter.
-
-### Step 0: Open a terminal
-
-A terminal is a window where you type commands.
-
-- **Windows:** press the Windows key, type `PowerShell`, press Enter.
-- **macOS:** press Cmd+Space, type `Terminal`, press Enter.
-- **Linux:** press Ctrl+Alt+T.
-
-### Step 1: Check that Python is installed
-
-Windows:
-
-```
-python --version
-```
-
-macOS / Linux:
-
-```
-python3 --version
-```
-
-**You should see:** `Python 3.10.x` or higher (3.12 and 3.14 also work).
-
-**If not** (the command is not found, or the version is below 3.10): install the newest Python from [python.org/downloads](https://www.python.org/downloads/). On Windows, tick **Add python.exe to PATH** on the first installer screen. Close the terminal, open a new one, and check again. On Windows, if `python` still is not found but `py --version` works, type `py -m venv .venv` in Step 4 instead of `python -m venv .venv`.
-
-### Step 2: Download the project
-
-**2a. Choose where the project will live, and go there.**
-
-> **You must change the path in this step.** The commands below use your Desktop as an example. The terminal has to be inside the folder where you want the project to live, so replace the path with your own if you want it somewhere else.
-
-To use your Desktop:
-
-Windows:
-
-```
-cd $HOME\Desktop
-```
-
-macOS / Linux:
+Go to the folder where you want the project to live. **Change this path to your own;** Desktop is just an example. Quote the path if it has spaces.
 
 ```
 cd ~/Desktop
 ```
 
-To use a different folder, replace the path with yours. Keep the quotation marks, which are needed if the path has spaces.
-
-Windows:
-
-```
-cd "C:\Users\YourName\Documents"
-```
-
-macOS:
-
-```
-cd "/Users/yourname/Documents"
-```
-
-Linux:
-
-```
-cd "/home/yourname/Documents"
-```
-
-**You should see:** no message, and your prompt now ends with the name of that folder.
-
-**If not:** on Windows, `Cannot find path ... Desktop` usually means your Desktop is inside OneDrive. Use `cd "$HOME\OneDrive\Desktop"` or pick another folder, such as Documents.
-
-**2b. Download the project.**
-
-**Option A, with git:**
+Then download it, with git:
 
 ```
 git clone https://github.com/jayanma29-bit/photo_culler_v2.git
 cd photo_culler_v2
 ```
 
-You should see `Cloning into 'photo_culler_v2'...`. The second line (`cd photo_culler_v2`) is not a path you change. It always moves into the folder that was just downloaded. If you get `git is not recognized`, install git from [git-scm.com](https://git-scm.com/downloads) or use Option B.
+or without git: on the GitHub page click **Code**, then **Download ZIP**, unzip it, and open a terminal in the unzipped folder (`photo_culler_v2-main`).
 
-**Option B, without git:** on the GitHub repository page click the green **Code** button, then **Download ZIP**. Unzip it (on Windows: right-click, **Extract All**). The folder is named `photo_culler_v2-main`.
-- **Windows:** open that folder in File Explorer, click the address bar at the top, type `powershell`, and press Enter. A terminal opens inside the folder.
-- **macOS / Linux:** in the terminal run `cd ~/Downloads/photo_culler_v2-main`. **Change this path** if you unzipped it somewhere else.
-
-**2c. Check you are in the right folder.** Run this:
-
-Windows:
-
-```
-Get-ChildItem
-```
-
-macOS / Linux:
-
-```
-ls
-```
-
-You should see `src`, `tests`, `sample_photos`, `requirements.txt` and `README.md`. If you don't, you are in the wrong folder; use `cd` to move into the project folder.
-
-Here is what the project folder looks like right after downloading:
+Every command from here on runs from inside this project folder. The folder looks like this:
 
 ```
 photo_culler_v2/
@@ -195,60 +78,18 @@ photo_culler_v2/
 └── requirements.txt
 ```
 
-Files that start with a dot (`.github`, `.env.example`, `.gitignore`) are often hidden in file browsers. On macOS press Cmd+Shift+. to show them. That is normal.
+### 2. Set up your folders
 
-**2d. Write down your project folder path.** Run this and copy what it prints into your notes:
+The program needs a photos folder (input) and a results folder (output). You pass them when you run it (Step 5), so decide now:
 
-Windows:
+- **Photos:** use `sample_photos` to try it out, or make a folder of your own and put your photos directly in it. Subfolders are not scanned.
+- **Results:** the default is an `output` folder inside the project, created on the first run. To put results elsewhere, make an empty folder just for them. Do not reuse your photos folder: `kept` and `rejected` inside it are rebuilt every run.
 
-```
-Get-Location
-```
+Note the full path of any folder you made. Windows: right-click it, **Copy as path**. macOS: right-click it in Finder, hold Option, **Copy as Pathname**. Linux: `pwd` inside it.
 
-macOS / Linux:
+### 3. Create a virtual environment and install packages
 
-```
-pwd
-```
-
-> **Important:** from here on, every command must be run from inside this project folder. The program finds its files relative to it.
-
-### Step 3: Set up your folders (photos in, results out)
-
-The program needs two folders: one to read photos from (input) and one to write results to (output). Set them up now, before installing anything else. You will tell the program about them when you run it (Step 8).
-
-**3a. Choose your photos folder (input).** Pick one:
-
-- **To try it first:** use `sample_photos`, which is already in the project. There is nothing to set up. Go to 3b.
-- **To sort your own photos:**
-  1. Create a new empty folder, for example `MyPhotos` on your Desktop (right-click, **New**, **Folder**).
-  2. Copy your photos into it. Put them directly in this folder, because subfolders are not scanned.
-  3. For your first run, use a small batch of 20 to 50 photos so it finishes quickly.
-  4. Copy the folder's path (see "Finding a folder's path" above) into your notes as your **Photos folder path**.
-
-**3b. Choose your results folder (output).** Pick one:
-
-- **Default (easiest):** do nothing. Results go into a folder called `output` inside the project, and the program creates it on the first run. Write `output` in your notes.
-- **Your own location:**
-  1. Create a new empty folder for the results, for example `culled` on your Desktop.
-  2. Use a folder just for this tool, and not the same folder as your photos. The `kept` and `rejected` folders inside it are rebuilt on every run.
-  3. Copy its path into your notes as your **Results folder path**.
-
-**3c. Your notes should now look like this** (examples):
-
-```
-Project folder path : C:\Users\YourName\Desktop\photo_culler_v2
-Photos folder path  : C:\Users\YourName\Desktop\MyPhotos     (or: sample_photos)
-Results folder path : C:\Users\YourName\Desktop\culled       (or: output)
-```
-
-**How to change them later:** you do not edit any code or settings file. You type a different path in the run command (Step 8) and nothing else.
-
-### Step 4: Create a virtual environment and install packages
-
-A virtual environment is a private box for this project's packages, so they don't mix with other Python programs on your computer. Make sure your terminal is still inside the project folder (Step 2d).
-
-**Windows (PowerShell):**
+Windows (PowerShell):
 
 ```
 python -m venv .venv
@@ -256,7 +97,9 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-**macOS / Linux:**
+If scripts are blocked, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` and activate again. If `python` is not found but `py` works, use `py -m venv .venv`.
+
+macOS / Linux:
 
 ```
 python3 -m venv .venv
@@ -264,21 +107,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**You should see:** after the second command, `(.venv)` appears at the start of your prompt. The install then prints many `Collecting...` lines, takes about a minute, and ends with `Successfully installed ...`. A notice saying a new version of pip is available is harmless.
+Your prompt should now start with `(.venv)`. On Debian or Ubuntu, if `venv` fails, run `sudo apt install python3-venv`. If `pillow-heif` fails to build, delete that line from `requirements.txt` and rerun the install; everything works except `.heic` photos.
 
-**If not:**
-- **"running scripts is disabled" (Windows):** run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`, answer `Y` if asked, then run the activate line again.
-- **No `(.venv)` at the start of your prompt:** the environment is not active. Run the activate line again, and do not continue until you see it.
-- **`venv` fails on Debian or Ubuntu:** run `sudo apt install python3-venv`, then try again.
-- **`Failed building wheel for pillow-heif`:** open `requirements.txt`, delete the `pillow-heif` line, save, and run `pip install -r requirements.txt` again. Everything works except `.heic` photos.
+### 4. Add your API key
 
-### Step 5: Get an API key and create your `.env` file
-
-The AI judging needs your own Gemini API key. It goes in a file named `.env`, which is **not** in the repository on purpose, so you create it yourself. This is a settings file: its lines are typed inside the file, never into the terminal.
-
-**Get a key:** go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey), sign in, click **Create API key**, and copy it. It usually starts with `AIza`. Treat it like a password: never post it or commit it.
-
-**Create `.env` from the template** (the project includes a template called `.env.example`):
+Your key goes in a file named `.env`. It is not in the repository, so create it from the template.
 
 Windows:
 
@@ -294,184 +127,63 @@ cp .env.example .env
 nano .env
 ```
 
-An editor opens showing `GEMINI_API_KEY=your_key_here`. Delete `your_key_here` and paste your key in its place, so the line reads like `GEMINI_API_KEY=AIza...`. No quotes and no spaces around `=`. Leave the lines that start with `#` alone.
+Replace `your_key_here` with your key, like `GEMINI_API_KEY=AIza...`. No quotes, no spaces around `=`. Save the file. Never share the key or commit `.env`.
 
-**Save:** in Notepad press Ctrl+S and close it. In nano press Ctrl+O, Enter, then Ctrl+X.
+**Changing the model (optional):** run `python -m src.list_models` to see what your key can use, then add `GEMINI_MODEL=model-name` to `.env` and save. No code changes. Photos already judged keep their old verdicts unless you run with `--rejudge`.
 
-**Check the file exists** (it starts with a dot, so file browsers often hide it, which is normal):
+### 5. Run it
 
-Windows:
-
-```
-Get-ChildItem -Force .env*
-```
-
-macOS / Linux:
-
-```
-ls -a .env*
-```
-
-**You should see:** `.env` and `.env.example`. On Windows, if you see `.env.txt` instead, fix the name with `Rename-Item .env.txt .env`.
-
-**Changing the AI model (optional).** You do not need to do this to get started. If you ever want a different Gemini model:
-
-1. Run `python -m src.list_models` to see the models your key can use.
-2. Open `.env` again (the same `notepad .env` or `nano .env` command as above).
-3. Add or edit a line so it reads `GEMINI_MODEL=model-name-here`, using the exact name from step 1. No quotes and no spaces around `=`.
-4. Save the file and run the program again. You do not edit any code.
-
-Photos judged earlier are remembered in `results.json`, so they keep their old verdicts. Add `--rejudge` to the run command to ask the new model about every photo again.
-
-### Step 6: Check that it works
+Check the install first:
 
 ```
 python -m src.main --help
 ```
 
-**You should see:** a usage message listing the options (`--input`, `--output`, `--dry-run` and so on).
-
-**If not:** `ModuleNotFoundError` means the environment is not active (go back to Step 4). `No module named src` means you are in the wrong folder (go back to Step 2).
-
-### Step 7: Run it on the sample photos
-
-First a dry run. It writes no files but does call the AI, so it needs your key and internet:
+Try the sample photos. A dry run prints every decision and writes nothing (it still calls the AI):
 
 ```
 python -m src.main --input sample_photos --dry-run
-```
-
-**You should see:** `Found N photos in sample_photos`, then one line per photo showing whether it is kept, low-rated or a duplicate, with a score and a reason. Each photo takes a few seconds. It ends with a `Done.` summary line. If you see `GEMINI_API_KEY is not set`, go back to Step 5.
-
-Now the real run, which writes the sorted copies:
-
-```
 python -m src.main --input sample_photos
 ```
 
-Open the results folder.
+Open the results: `explorer output` (Windows), `open output` (macOS) or `xdg-open output` (Linux). You should see `kept/`, `rejected/` and `report.csv`.
 
-Windows:
-
-```
-explorer output
-```
-
-macOS:
+**Your own photos and folders.** Point `--input` at your photos and, optionally, `--output` at your results folder (use `python3` on macOS / Linux):
 
 ```
-open output
+python -m src.main --input "C:\Users\you\Pictures\Trip" --output "C:\Users\you\Desktop\culled" --dry-run
+python -m src.main --input "C:\Users\you\Pictures\Trip" --output "C:\Users\you\Desktop\culled"
 ```
 
-Linux:
-
-```
-xdg-open output
-```
-
-**You should see:** the folders `kept` and `rejected` and a file `report.csv`. Your original photos were not changed.
-
-Your project folder now looks like this:
-
-```
-photo_culler_v2/
-├── .github/
-├── .venv/               (you created it in Step 4)
-├── output/              (made by the program: kept/, rejected/, report.csv)
-├── sample_photos/
-├── src/
-├── tests/
-├── .env                 (you created it in Step 5: holds your API key)
-├── .env.example
-├── .gitignore
-├── LICENSE
-├── README.md
-├── requirements.txt
-└── results.json         (made by the program: remembers its judgments)
-```
-
-### Step 8: Use your own photos and your own folders
-
-This is where you use the paths from your notes (Step 3). You give them to the program with two options:
-
-- `--input` is the folder with your photos.
-- `--output` is the folder where the results go.
-
-Both are optional. If you leave one out, the default is used: `sample_photos` for input and `output` for output.
-
-**The pattern:**
-
-```
-python -m src.main --input "PHOTOS_PATH" --output "RESULTS_PATH"
-```
-
-Replace `PHOTOS_PATH` and `RESULTS_PATH` with the paths from your notes. Keep the quotation marks. If you used **Copy as path** on Windows, the quotes came with the path, so replace `"PHOTOS_PATH"` including its quotes. Do not end a Windows path with a backslash.
-
-**Do a dry run first, then the real run.** A dry run prints every decision and writes nothing.
-
-Windows:
-
-```
-python -m src.main --input "C:\Users\YourName\Desktop\MyPhotos" --output "C:\Users\YourName\Desktop\culled" --dry-run
-python -m src.main --input "C:\Users\YourName\Desktop\MyPhotos" --output "C:\Users\YourName\Desktop\culled"
-```
-
-macOS:
-
-```
-python3 -m src.main --input "/Users/yourname/Desktop/MyPhotos" --output "/Users/yourname/Desktop/culled" --dry-run
-python3 -m src.main --input "/Users/yourname/Desktop/MyPhotos" --output "/Users/yourname/Desktop/culled"
-```
-
-Linux:
-
-```
-python3 -m src.main --input "/home/yourname/Desktop/MyPhotos" --output "/home/yourname/Desktop/culled" --dry-run
-python3 -m src.main --input "/home/yourname/Desktop/MyPhotos" --output "/home/yourname/Desktop/culled"
-```
-
-**Changing only one folder.** Leave the other option out.
-
-- Only your own photos, results in the default `output`: `python -m src.main --input "PHOTOS_PATH"`
-- Only a different results folder, with the default `sample_photos`: `python -m src.main --output "RESULTS_PATH"`
-
-**Changing folders any time.** Run the command again with a different path. Nothing else changes. Two tips:
-
-- Judgments are remembered in `results.json` by filename, and cameras often reuse names like `IMG_0001.jpg`. When you switch to a different photos folder, give it its own memory file so the two sets don't get mixed up. For example, add `--results results_trip.json` to the command.
-- Press the Up arrow key in the terminal to bring back your last command instead of typing the paths again.
-
-Supported files are `.jpg`, `.jpeg`, `.png`, `.webp` and `.heic`, and only the top level of the photos folder is scanned.
-
-To see the results, open your results folder: the `output` folder in the project (use the command in Step 7), or the folder you gave to `--output`.
+On macOS / Linux the paths look like `/Users/you/Pictures/Trip` or `/home/you/Pictures/Trip`. Leave out `--output` to use `output`, or leave out `--input` to use `sample_photos`. To change folders later, just run the command with different paths. Judgments are remembered by filename, and cameras reuse names like `IMG_0001.jpg`, so give each photos folder its own cache file with `--results results_trip.json`.
 
 ### Coming back later
 
-Steps 1 to 5 are a one-time setup. Each time you open a new terminal, only do this. **Change the paths** to your own project folder and your own photos and results folders from your notes.
+Steps 1 to 4 are one-time. In a new terminal, go to the project folder (**change the path to yours**), activate the environment, and run:
 
 Windows:
 
 ```
-cd "C:\Users\YourName\Desktop\photo_culler_v2"
+cd "C:\Users\you\Desktop\photo_culler_v2"
 .\.venv\Scripts\Activate.ps1
-python -m src.main --input "C:\Users\YourName\Desktop\MyPhotos" --output "C:\Users\YourName\Desktop\culled"
+python -m src.main --input "path\to\photos"
 ```
 
 macOS / Linux:
 
 ```
-cd "/path/to/photo_culler_v2"
+cd ~/Desktop/photo_culler_v2
 source .venv/bin/activate
-python3 -m src.main --input "/path/to/photos" --output "/path/to/results"
+python3 -m src.main --input "path/to/photos"
 ```
 
 ### Files you create yourself
 
 | File or folder | Created by | Needed to run? |
 |---|---|---|
-| `.venv/` | You, in Step 4 | Yes |
-| `.env` | You, in Step 5 | Yes (holds your API key) |
-| A photo folder | You, in Step 3 (or use `sample_photos/`) | Yes |
-| A results folder | You, in Step 3, or `output/` made by the tool | No |
+| `.venv/` | You, in Step 3 | Yes |
+| `.env` | You, in Step 4 | Yes (holds your API key) |
+| A photo folder | You (or use `sample_photos/`) | Yes |
 | `results.json` | The tool (judgment cache) | No |
 | `output/` | The tool (sorted copies and `report.csv`) | No |
 | `labels.csv` | `python -m src.evaluate --template` | Only for accuracy testing |
@@ -528,7 +240,7 @@ To measure how well the AI agrees with you, run `python -m src.evaluate --templa
 |---|---|
 | `ModuleNotFoundError` | The venv is not active. Activate it and run `pip install -r requirements.txt`. |
 | `No module named src` | You are not in the project folder. `cd` into the folder that contains `src/`. |
-| `GEMINI_API_KEY is not set` | Create `.env` (Step 5) and run from the project folder. On Windows, check the file is not really named `.env.txt`: run `Get-ChildItem -Force .env*`. |
+| `GEMINI_API_KEY is not set` | Create `.env` (Step 4) and run from the project folder. On Windows, check the file is not really named `.env.txt`: run `Get-ChildItem -Force .env*`. |
 | `GEMINI_API_KEY was rejected` | Check `.env` for typos, quotes or extra spaces, and that the key is active in Google AI Studio. |
 | `Model '...' was not found` | Run `python -m src.list_models`, then set `GEMINI_MODEL=<model>` in `.env`. |
 | `Input folder not found` | The `--input` path does not exist. Folders like `test_photos/` are not in the repo; use `sample_photos` or your own path, in quotes if it has spaces. |
