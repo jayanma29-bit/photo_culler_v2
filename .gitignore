@@ -1,13 +1,27 @@
-﻿.venv/
+﻿# Virtual environments
+.venv*/
 venv/
+
+# Python caches
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Secrets (keep the template .env.example)
 .env
 .env.*
 !.env.example
+
+# Private photos and generated data (put shareable photos in sample_photos/)
 test_photos/
 source_photos/
 output/
 results.json
 results.json.*
+labels.csv
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -35,19 +35,46 @@ After a shoot, trip or event you often end up with hundreds of photos: some blur
 
 ## Setup
 
-**You need:**
+You need **Python 3.10 or newer** ([python.org/downloads](https://www.python.org/downloads/)) and a **Gemini API key** from [Google AI Studio](https://aistudio.google.com/apikey). Availability, limits and pricing depend on your country and change over time, so check Google's current terms.
 
-- Python 3.10 or newer ([python.org/downloads](https://www.python.org/downloads/))
-- A Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey). Availability, limits and pricing depend on your country and change over time, so check Google's current terms.
+### Step 1: Get the code
+
+```
+git clone https://github.com/jayanma29-bit/photo_culler_v2.git
+cd photo_culler_v2
+```
+
+No git? On the repository page click **Code > Download ZIP**, unzip it, and open a terminal inside the unzipped folder.
+
+### Step 2: Create a virtual environment and install
 
 **Windows (PowerShell)**
 
 ```powershell
-git clone https://github.com/jayanma29-bit/photo_culler_v2.git
-cd photo_culler_v2
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+```
+
+If `python` is not found, use `py`. If activation says "scripts are disabled", run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` and activate again.
+
+**macOS / Linux**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Your prompt should now start with `(.venv)`. Activate the venv again every time you open a new terminal.
+
+### Step 3: Create your `.env` file (required)
+
+The `.env` file holds your private API key. It is **not** in the repository on purpose, so you create it by copying the template `.env.example` (a hidden file, because its name starts with a dot).
+
+**Windows (PowerShell)**
+
+```powershell
 Copy-Item .env.example .env
 notepad .env
 ```
@@ -55,26 +82,60 @@ notepad .env
 **macOS / Linux**
 
 ```bash
-git clone https://github.com/jayanma29-bit/photo_culler_v2.git
-cd photo_culler_v2
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
 cp .env.example .env
 nano .env
 ```
 
-Then:
+Replace `your_key_here` with your key. The file should contain exactly this one line (no quotes, no spaces around `=`):
 
-1. In `.env`, replace `your_key_here` with your API key and save.
-2. Check the install: `python -m src.main --help` should print the options list.
-3. Keep your venv active. Your prompt should start with `(.venv)` every time you run the tool.
+```
+GEMINI_API_KEY=AIza...your-real-key...
+```
 
-No git? Use **Code > Download ZIP** on the repository page and open a terminal in the unzipped folder. On Windows, if activation says "scripts are disabled", run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` and activate again.
+Save and close. Optionally add `GEMINI_MODEL=<model name>` on its own line to use a different model.
+
+### Step 4: Choose photos (required)
+
+Your photos are not in the repository either. Pick one:
+
+- **Try the included samples:** the repo has a `sample_photos/` folder. Nothing to do.
+- **Use your own photos:** put them in any folder and pass its path with `--input` (see [Usage](#usage)). Quote the path if it contains spaces.
+
+### Step 5: Check that everything is in place
+
+```
+python -m src.main --help
+python -m src.main --input sample_photos --dry-run
+```
+
+The first prints the options list. The second prints a decision for every sample photo and writes nothing. To confirm your files exist (the `-Force` and `-a` flags show hidden files):
+
+```powershell
+Get-ChildItem -Force        # Windows
+```
+
+```bash
+ls -a                       # macOS / Linux
+```
+
+You should see `.env`, `.env.example`, `requirements.txt`, `src`, `sample_photos` and `.venv`.
+
+### Files you create yourself
+
+| File or folder | Created by | Needed to run? |
+|---|---|---|
+| `.venv/` | You, in Step 2 | Yes |
+| `.env` | You, in Step 3 | Yes (holds your API key) |
+| A photo folder | You (or use `sample_photos/`) | Yes |
+| `results.json` | The tool (judgment cache) | No |
+| `output/` | The tool (sorted copies and `report.csv`) | No |
+| `labels.csv` | `python -m src.evaluate --template` | Only for accuracy testing |
+
+The last three are private or generated data, so git ignores them. They will not be in a fresh clone, and that is normal.
 
 ## Usage
 
-Run from the project folder. Start with a dry run, which prints every decision and writes nothing:
+Run from the project folder with the venv active. Start with a dry run, which prints every decision and writes nothing:
 
 ```
 python -m src.main --input "path/to/photos" --dry-run
@@ -83,14 +144,14 @@ python -m src.main --input "path/to/photos"
 
 | Option | Meaning |
 |---|---|
-| `--input PATH` | Folder with your photos (default `test_photos`) |
+| `--input PATH` | Folder with your photos (default `sample_photos`) |
 | `--output PATH` | Where sorted copies and the report go (default `output`) |
 | `--dry-run` | Print decisions, write no folders or report (new photos still use API calls) |
 | `--threshold N` | Duplicate sensitivity: lower is stricter, higher groups more (default 6) |
 | `--rejudge` | Ignore saved judgments and ask the AI again |
 | `--results PATH` | Judgment cache file (default `results.json`) |
 
-Supported types: `.jpg`, `.jpeg`, `.png`, `.webp`, and iPhone `.heic`. Only the top level of the input folder is scanned. Optionally set `GEMINI_MODEL` in `.env` to use a different model.
+Supported types: `.jpg`, `.jpeg`, `.png`, `.webp`, and iPhone `.heic`. Only the top level of the input folder is scanned.
 
 ## Understanding the output
 
@@ -110,19 +171,23 @@ To measure how well the AI agrees with you, run `python -m src.evaluate --templa
 
 - Inputs are only read, never changed. The `kept/` and `rejected/` folders inside the output folder are rebuilt every run, so use a dedicated output folder. The tool refuses to delete folders it did not create.
 - Photos are resized to 1024 px and **sent to Google's Gemini API** for judging. Only use photos you are comfortable sharing with a third party.
-- Your API key lives only in `.env`, which git ignores. Never paste it in code, chats or screenshots. If it leaks, delete it in Google AI Studio and make a new one.
-- `results.json` stores your filenames and the AI's reasons. Do not publish it if your filenames are private.
+- Your API key lives only in `.env`. Never paste it in code, chats or screenshots. If it leaks, delete it in Google AI Studio and make a new one.
+- `.gitignore` keeps private and generated data out of git: `.env`, `results.json`, `labels.csv`, `output/`, `test_photos/` and `source_photos/`. `results.json` and `labels.csv` contain your filenames, so do not publish them if those are private.
+- Photos you want to share belong in `sample_photos/`, which is not ignored.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
 | `ModuleNotFoundError` | The venv is not active. Activate it and run `pip install -r requirements.txt`. |
-| `GEMINI_API_KEY is not set` or `was rejected` | Check that `.env` exists, contains your key with no extra spaces, and that you run from the project folder. |
+| `No module named src` | You are not in the project folder. `cd` into the folder that contains `src/`. |
+| `GEMINI_API_KEY is not set` | Create `.env` (Step 3) and run from the project folder. On Windows, check the file is not really named `.env.txt`: run `Get-ChildItem -Force .env*`. |
+| `GEMINI_API_KEY was rejected` | Check `.env` for typos, quotes or extra spaces, and that the key is active in Google AI Studio. |
 | `Model '...' was not found` | Run `python -m src.list_models`, then set `GEMINI_MODEL=<model>` in `.env`. |
+| `Input folder not found` | The `--input` path does not exist. Folders like `test_photos/` are not in the repo; use `sample_photos` or your own path, in quotes if it has spaces. |
+| `Found 0 photos` | Check the path and file types. Subfolders are not scanned. |
 | `ERROR` lines with 429 or quota | You hit a rate limit. Wait and rerun; finished photos are cached. |
 | `ERROR ... cannot identify image file` | The file is corrupt or not a real image. It is skipped. |
-| `Found 0 photos` | Check the path and file types. Subfolders are not scanned. |
 | `Refusing to overwrite ...` | Choose a different `--output` folder. |
 | `PermissionError` on `report.csv` | Close the file in Excel and rerun. |
 | Wrong duplicate grouping | Lower `--threshold` to group less, raise it to group more. |
@@ -138,10 +203,13 @@ Still stuck? Open a GitHub issue with your OS, `python --version`, the command y
 | `src/judge.py` | Gemini API call, prompt, retries, friendly API errors |
 | `src/evaluate.py` | Compares the AI's decisions to your own labels |
 | `src/list_models.py` | Lists the Gemini models your key can use |
+| `sample_photos/` | Example photos to try the tool right after cloning |
 | `tests/` | Automated tests (fake judge, no API key needed) |
 | `.github/workflows/portability.yml` | CI on Windows, macOS and Linux with Python 3.10, 3.12, 3.14 |
 | `requirements.txt` | The 8 direct dependencies |
 | `.env.example` | Template for your private `.env` |
+| `.gitignore` | Keeps secrets and private or generated data out of git |
+| `LICENSE` | MIT license |
 
 Run the tests with `pip install pytest`, then `python -m pytest -q`.
 

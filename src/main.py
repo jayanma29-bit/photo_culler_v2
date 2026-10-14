@@ -115,8 +115,8 @@ def main():
         description="AI photo culler: sorts copies of your photos into kept / low-rated / duplicates. "
                     "Your original photos are never modified."
     )
-    parser.add_argument("--input", default="test_photos",
-                        help="folder containing your photos (default: test_photos)")
+    parser.add_argument("--input", default="sample_photos",
+                        help="folder containing your photos (default: sample_photos)")
     parser.add_argument("--output", default="output",
                         help="folder where sorted copies and report.csv are written (default: output)")
     parser.add_argument("--results", default="results.json",
