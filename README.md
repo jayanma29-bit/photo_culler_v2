@@ -46,24 +46,42 @@ After a shoot, trip or event you often end up with hundreds of photos: some blur
 
 ## Setup
 
+# If any help is needed, please create a issue and I will get back as soon as possible.
+
+
 ### 1. Download the project
 
 Go to the folder where you want the project to live. **Change this path to your own;** Desktop is just an example. Quote the path if it has spaces.
 
 ```
-cd ~/Desktop
+cd ~/Desktop --> For example, in my case, `C:\Users\jayan`
 ```
 
-Then download it, with git:
+Then download it, with git **HIGHLY RECOMMENDED OVER ZIP**:
 
 ```
 git clone https://github.com/jayanma29-bit/photo_culler_v2.git
 cd photo_culler_v2
 ```
+### Installing Git (optional)
 
-or without git: on the GitHub page click **Code**, then **Download ZIP**, unzip it, and open a terminal in the unzipped folder (`photo_culler_v2-main`).
 
-Every command from here on runs from inside this project folder. The folder looks like this:
+1. Download Git from [git-scm.com/downloads](https://git-scm.com/downloads).
+2. Install it:
+   - **Windows:** run the installer and accept the defaults.
+   - **macOS:** run `git --version` in Terminal. If Git is missing, macOS offers to install it. Click **Install**.
+   - **Linux:** run `sudo apt install git` (Debian/Ubuntu) or your distro's equivalent.
+3. Close and reopen your terminal, then check it worked:
+
+```
+git --version
+```
+
+You should see a version number such as `git version 2.45.0`.
+
+**without git**: on the GitHub page click **Code**, then **Download ZIP**, unzip it, and open a terminal in the unzipped folder (`photo_culler_v2-main`).
+
+Every command from here on runs from inside this project folder. The folder should look EXACTLY like this:
 
 ```
 photo_culler_v2/
@@ -157,16 +175,21 @@ python -m src.main --input "C:\Users\you\Pictures\Trip" --output "C:\Users\you\D
 
 On macOS / Linux the paths look like `/Users/you/Pictures/Trip` or `/home/you/Pictures/Trip`. Leave out `--output` to use `output`, or leave out `--input` to use `sample_photos`. To change folders later, just run the command with different paths. Judgments are remembered by filename, and cameras reuse names like `IMG_0001.jpg`, so give each photos folder its own cache file with `--results results_trip.json`.
 
-### Coming back later
+### Everyday use (after setup)
 
-Steps 1 to 4 are one-time. In a new terminal, go to the project folder (**change the path to yours**), activate the environment, and run:
+Each time you want to sort a new batch of photos:
+
+1. Open a terminal and go to the project folder. **Change the path to yours.**
+2. Activate the environment. Your prompt should start with `(.venv)`.
+3. Run the program on your photos. **Always include `--input`.** Without it, the program runs on the sample photos again.
+4. Open your results folder.
 
 Windows:
 
 ```
 cd "C:\Users\you\Desktop\photo_culler_v2"
 .\.venv\Scripts\Activate.ps1
-python -m src.main --input "path\to\photos"
+python -m src.main --input "C:\Users\you\Pictures\Trip" --output "C:\Users\you\Desktop\culled"
 ```
 
 macOS / Linux:
@@ -174,8 +197,12 @@ macOS / Linux:
 ```
 cd ~/Desktop/photo_culler_v2
 source .venv/bin/activate
-python3 -m src.main --input "path/to/photos"
+python3 -m src.main --input "/Users/you/Pictures/Trip" --output "/Users/you/Desktop/culled"
 ```
+
+- Every run rebuilds `kept/` and `rejected/` in the output folder. Copy your results out first, or use a new `--output` folder for each batch.
+- Add `--dry-run` to preview decisions without writing any files.
+- For a new photos folder, add `--results results_name.json` so old and new verdicts don't mix.
 
 ### Files you create yourself
 
