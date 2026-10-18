@@ -44,136 +44,6 @@ After a shoot, trip or event you often end up with hundreds of photos: some blur
 
 **Good to know:** judgments are cached in `results.json`, so rerunning on the same photos is free and instant, and an interrupted run continues where it stopped. One bad photo never stops a run; it is printed as an `ERROR` line and skipped.
 
-## Setup
-
-# If any help is needed, please create a issue and I will get back as soon as possible.
-
-
-### 1. Download the project
-
-Go to the folder where you want the project to live. **Change this path to your own;** Desktop is just an example. Quote the path if it has spaces.
-
-```
-cd ~/Desktop --> For example, in my case, `C:\Users\jayan`
-```
-
-Then download it, with git **HIGHLY RECOMMENDED OVER ZIP**:
-
-```
-git clone https://github.com/jayanma29-bit/photo_culler_v2.git
-cd photo_culler_v2
-```
-### Installing Git (optional)
-
-
-1. Download Git from [git-scm.com/downloads](https://git-scm.com/downloads).
-2. Install it:
-   - **Windows:** run the installer and accept the defaults.
-   - **macOS:** run `git --version` in Terminal. If Git is missing, macOS offers to install it. Click **Install**.
-   - **Linux:** run `sudo apt install git` (Debian/Ubuntu) or your distro's equivalent.
-3. Close and reopen your terminal, then check it worked:
-
-```
-git --version
-```
-
-You should see a version number such as `git version 2.45.0`.
-
-**without git**: on the GitHub page click **Code**, then **Download ZIP**, unzip it, and open a terminal in the unzipped folder (`photo_culler_v2-main`).
-
-Every command from here on runs from inside this project folder. The folder should look EXACTLY like this:
-
-```
-photo_culler_v2/
-├── .github/
-├── src/                 (the program: main.py, judge.py, ...)
-├── tests/
-├── sample_photos/       (example photos you can try first)
-├── .env.example         (template for your settings)
-├── .gitignore
-├── LICENSE
-├── README.md
-└── requirements.txt
-```
-
-### 2. Set up your folders
-
-The program needs a photos folder (input) and a results folder (output). You pass them when you run it (Step 5), so decide now:
-
-- **Photos:** use `sample_photos` to try it out, or make a folder of your own and put your photos directly in it. Subfolders are not scanned.
-- **Results:** the default is an `output` folder inside the project, created on the first run. To put results elsewhere, make an empty folder just for them. Do not reuse your photos folder: `kept` and `rejected` inside it are rebuilt every run.
-
-Note the full path of any folder you made. Windows: right-click it, **Copy as path**. macOS: right-click it in Finder, hold Option, **Copy as Pathname**. Linux: `pwd` inside it.
-
-### 3. Create a virtual environment and install packages
-
-Windows (PowerShell):
-
-```
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-If scripts are blocked, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` and activate again. If `python` is not found but `py` works, use `py -m venv .venv`.
-
-macOS / Linux:
-
-```
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Your prompt should now start with `(.venv)`. On Debian or Ubuntu, if `venv` fails, run `sudo apt install python3-venv`. If `pillow-heif` fails to build, delete that line from `requirements.txt` and rerun the install; everything works except `.heic` photos.
-
-### 4. Add your API key
-
-Your key goes in a file named `.env`. It is not in the repository, so create it from the template.
-
-Windows:
-
-```
-Copy-Item .env.example .env
-notepad .env
-```
-
-macOS / Linux:
-
-```
-cp .env.example .env
-nano .env
-```
-
-Replace `your_key_here` with your key, like `GEMINI_API_KEY=AIza...`. No quotes, no spaces around `=`. Save the file. Never share the key or commit `.env`.
-
-**Changing the model (optional):** run `python -m src.list_models` to see what your key can use, then add `GEMINI_MODEL=model-name` to `.env` and save. No code changes. Photos already judged keep their old verdicts unless you run with `--rejudge`.
-
-### 5. Run it
-
-Check the install first:
-
-```
-python -m src.main --help
-```
-
-Try the sample photos. A dry run prints every decision and writes nothing (it still calls the AI):
-
-```
-python -m src.main --input sample_photos --dry-run
-python -m src.main --input sample_photos
-```
-
-Open the results: `explorer output` (Windows), `open output` (macOS) or `xdg-open output` (Linux). You should see `kept/`, `rejected/` and `report.csv`.
-
-**Your own photos and folders.** Point `--input` at your photos and, optionally, `--output` at your results folder (use `python3` on macOS / Linux):
-
-```
-python -m src.main --input "C:\Users\you\Pictures\Trip" --output "C:\Users\you\Desktop\culled" --dry-run
-python -m src.main --input "C:\Users\you\Pictures\Trip" --output "C:\Users\you\Desktop\culled"
-```
-
-On macOS / Linux the paths look like `/Users/you/Pictures/Trip` or `/home/you/Pictures/Trip`. Leave out `--output` to use `output`, or leave out `--input` to use `sample_photos`. To change folders later, just run the command with different paths. Judgments are remembered by filename, and cameras reuse names like `IMG_0001.jpg`, so give each photos folder its own cache file with `--results results_trip.json`.
 
 ### Everyday use (after setup)
 
@@ -204,18 +74,131 @@ python3 -m src.main --input "/Users/you/Pictures/Trip" --output "/Users/you/Desk
 - Add `--dry-run` to preview decisions without writing any files.
 - For a new photos folder, add `--results results_name.json` so old and new verdicts don't mix.
 
-### Files you create yourself
 
-| File or folder | Created by | Needed to run? |
-|---|---|---|
-| `.venv/` | You, in Step 3 | Yes |
-| `.env` | You, in Step 4 | Yes (holds your API key) |
-| A photo folder | You (or use `sample_photos/`) | Yes |
-| `results.json` | The tool (judgment cache) | No |
-| `output/` | The tool (sorted copies and `report.csv`) | No |
-| `labels.csv` | `python -m src.evaluate --template` | Only for accuracy testing |
+## Setup
 
-The last three are private or generated data, so git ignores them. They will not be in a fresh clone, and that is normal.
+Takes about 5 minutes. Open a terminal first: **PowerShell** on Windows, **Terminal** on macOS / Linux.
+
+### 1. Download the project
+
+```
+git clone https://github.com/jayanma29-bit/photo_culler_v2.git
+cd photo_culler_v2
+```
+
+No Git? [Install it](https://git-scm.com/downloads), or on the GitHub page click **Code → Download ZIP**, unzip, and open a terminal inside the unzipped folder.
+
+### 2. Install
+
+**Windows:**
+```
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+**macOS / Linux:**
+```
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Your prompt should now start with `(.venv)`.
+
+### 3. Add your API key
+
+**Windows:**
+```
+Copy-Item .env.example .env
+notepad .env
+```
+
+**macOS / Linux:**
+```
+cp .env.example .env
+nano .env
+```
+
+Replace `your_key_here` with your key (`GEMINI_API_KEY=AIza...`), then save. No quotes, no spaces around `=`. Never share this file.
+
+The folder should look like this: 
+
+```
+photo_culler_v2/
+├── .github/
+├── src/                 (the program: main.py, judge.py, ...)
+├── tests/
+├── sample_photos/       (example photos you can try first)
+├── .env.example         (template for your settings)
+├── .gitignore
+├── LICENSE
+├── README.md
+└── requirements.txt
+```
+
+### 4. Run it
+
+Try the sample photos first:
+
+```
+python -m src.main --input sample_photos
+```
+
+(Use `python3` on macOS / Linux.) Then open the `output` folder. You should see `kept/`, `rejected/` and `report.csv`.
+
+**Now your own photos:**
+
+```
+python -m src.main --input "C:\Users\you\Pictures\Trip" --output "C:\Users\you\Desktop\culled"
+```
+
+On macOS / Linux the paths look like `/Users/you/Pictures/Trip`. Tip: add `--dry-run` to preview decisions without writing any files.
+
+
+### Everyday use (after setup)
+
+Each time you want to sort a new batch of photos:
+
+1. Open a terminal and go to the project folder. **Change the path to yours.**
+2. Activate the environment. Your prompt should start with `(.venv)`.
+3. Run the program on your photos. **Always include `--input`.** Without it, the program runs on the sample photos again.
+4. Open your results folder.
+
+Windows:
+
+```
+cd "C:\Users\you\Desktop\photo_culler_v2"
+.\.venv\Scripts\Activate.ps1
+python -m src.main --input "C:\Users\you\Pictures\Trip" --output "C:\Users\you\Desktop\culled"
+```
+
+macOS / Linux:
+
+```
+cd ~/Desktop/photo_culler_v2
+source .venv/bin/activate
+python3 -m src.main --input "/Users/you/Pictures/Trip" --output "/Users/you/Desktop/culled"
+```
+
+- Every run rebuilds `kept/` and `rejected/` in the output folder. Copy your results out first, or use a new `--output` folder for each batch.
+- Add `--dry-run` to preview decisions without writing any files.
+- For a new photos folder, add `--results results_name.json` so old and new verdicts don't mix.
+
+
+**Something went wrong?** See [Troubleshooting](#troubleshooting). Still stuck? Open a GitHub issue and I'll get back to you as soon as I can.
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Usage
 
