@@ -45,36 +45,6 @@ After a shoot, trip or event you often end up with hundreds of photos: some blur
 **Good to know:** judgments are cached in `results.json`, so rerunning on the same photos is free and instant, and an interrupted run continues where it stopped. One bad photo never stops a run; it is printed as an `ERROR` line and skipped.
 
 
-### Everyday use (after setup)
-
-Each time you want to sort a new batch of photos:
-
-1. Open a terminal and go to the project folder. **Change the path to yours.**
-2. Activate the environment. Your prompt should start with `(.venv)`.
-3. Run the program on your photos. **Always include `--input`.** Without it, the program runs on the sample photos again.
-4. Open your results folder.
-
-Windows:
-
-```
-cd "C:\Users\you\Desktop\photo_culler_v2"
-.\.venv\Scripts\Activate.ps1
-python -m src.main --input "C:\Users\you\Pictures\Trip" --output "C:\Users\you\Desktop\culled"
-```
-
-macOS / Linux:
-
-```
-cd ~/Desktop/photo_culler_v2
-source .venv/bin/activate
-python3 -m src.main --input "/Users/you/Pictures/Trip" --output "/Users/you/Desktop/culled"
-```
-
-- Every run rebuilds `kept/` and `rejected/` in the output folder. Copy your results out first, or use a new `--output` folder for each batch.
-- Add `--dry-run` to preview decisions without writing any files.
-- For a new photos folder, add `--results results_name.json` so old and new verdicts don't mix.
-
-
 ## Setup
 
 Takes about 5 minutes. Open a terminal first: **PowerShell** on Windows, **Terminal** on macOS / Linux.
